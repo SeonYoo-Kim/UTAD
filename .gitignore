@@ -1,1 +1,5 @@
-data/*
+
+code/data/**
+!code/data/.gitkeep
+.idea
+__pycache__
