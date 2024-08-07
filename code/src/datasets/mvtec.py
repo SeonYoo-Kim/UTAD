@@ -9,9 +9,9 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 
 #CLASS_NAMES = ['carpet', 'grid', 'leather', 'tile', 'wood']
-CLASS_NAMES = ['02']
+#CLASS_NAMES = ['02']
 # CLASS_NAMES = ['texture_1', 'texture_2']
-# CLASS_NAMES = ['grey_cloth', 'grid_cloth', 'pink_flower', 'yellow_cloth']
+CLASS_NAMES = ['grey_cloth', 'grid_cloth', 'pink_flower', 'yellow_cloth']
 
 class MVTecDataset(Dataset):
     def __init__(self, root_path='../data', class_name='carpet', is_train=True, resize=320, cropsize=320):
