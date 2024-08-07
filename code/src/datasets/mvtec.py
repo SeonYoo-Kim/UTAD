@@ -3,28 +3,42 @@ import tarfile
 from PIL import Image
 from tqdm import tqdm
 import urllib.request
+import argparse
 
 import torch
 from torch.utils.data import Dataset
 from torchvision import transforms as T
 
+def get_args():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--dataset_category', choices=['MVTec', 'BTAD', 'WFDD', 'WFT'], default='MVTec', help="select type of dataset")
 
-URL = 'ftp://guest:GU.205dldo@ftp.softronics.ch/mvtec_anomaly_detection/mvtec_anomaly_detection.tar.xz'
-CLASS_NAMES = ['carpet', 'grid', 'leather', 'tile', 'wood']
+    args = parser.parse_args()
+    return args
 
 class MVTecDataset(Dataset):
-    def __init__(self, root_path='../data', class_name='carpet', is_train=True,
-                 resize=320, cropsize=320):
+    def __init__(self, root_path='../data', class_name='carpet', is_train=True, resize=320, cropsize=320):
+        args = get_args()
+
+        if args.dataset_category == "MVTec" :
+            CLASS_NAMES = ['carpet', 'grid', 'leather', 'tile', 'wood']
+        elif args.dataset_category == "BTAD":
+            CLASS_NAMES = ['02']
+        elif args.dataset_category == "WFDD":
+            CLASS_NAMES = ['grey_cloth', 'grid_cloth', 'pink_flower', 'yellow_cloth']
+        elif args.dataset_category == "WFT":
+            CLASS_NAMES = ['texture_1', 'texture_2']
+
         assert class_name in CLASS_NAMES, 'class_name: {}, should be in {}'.format(class_name, CLASS_NAMES)
         self.root_path = root_path
         self.class_name = class_name
         self.is_train = is_train
         self.resize = resize
         self.cropsize = cropsize
-        self.mvtec_folder_path = os.path.join(root_path, 'mvtec_anomaly_detection')
+        self.mvtec_folder_path = os.path.join(root_path, args.dataset_category)
 
         # download dataset if not exist
-        self.download()
+        # self.download()
 
         # load dataset
         self.x, self.y, self.mask = self.load_dataset_folder()
@@ -91,19 +105,19 @@ class MVTecDataset(Dataset):
 
         return list(x), list(y), list(mask)
 
-    def download(self):
-        """Download dataset if not exist"""
-
-        if not os.path.exists(self.mvtec_folder_path):
-            tar_file_path = self.mvtec_folder_path + '.tar.xz'
-            if not os.path.exists(tar_file_path):
-                download_url(URL, tar_file_path)
-            print('unzip downloaded dataset: %s' % tar_file_path)
-            tar = tarfile.open(tar_file_path, 'r:xz')
-            tar.extractall(self.mvtec_folder_path)
-            tar.close()
-
-        return
+    # def download(self):
+    #     """Download dataset if not exist"""
+    #
+    #     if not os.path.exists(self.mvtec_folder_path):
+    #         tar_file_path = self.mvtec_folder_path + '.tar.xz'
+    #         if not os.path.exists(tar_file_path):
+    #             download_url(URL, tar_file_path)
+    #         print('unzip downloaded dataset: %s' % tar_file_path)
+    #         tar = tarfile.open(tar_file_path, 'r:xz')
+    #         tar.extractall(self.mvtec_folder_path)
+    #         tar.close()
+    #
+    #     return
 
 
 class DownloadProgressBar(tqdm):
