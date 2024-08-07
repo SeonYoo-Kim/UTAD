@@ -1,5 +1,5 @@
 
 code/data/**
 !code/data/.gitkeep
-.idea
+.idea/**
 __pycache__
