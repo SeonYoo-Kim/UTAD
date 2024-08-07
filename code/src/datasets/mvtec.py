@@ -14,7 +14,7 @@ CLASS_NAMES = ['02']
 # CLASS_NAMES = ['grey_cloth', 'grid_cloth', 'pink_flower', 'yellow_cloth']
 
 class MVTecDataset(Dataset):
-    def __init__(self, args, root_path='../data', class_name='carpet', is_train=True, resize=320, cropsize=320):
+    def __init__(self, root_path='../data', class_name='carpet', is_train=True, resize=320, cropsize=320):
 
         assert class_name in CLASS_NAMES, 'class_name: {}, should be in {}'.format(class_name, CLASS_NAMES)
         self.root_path = root_path
