@@ -11,7 +11,7 @@ from torchvision import transforms as T
 
 def get_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset_category', choices=['MVTec', 'BTAD', 'WFDD', 'WFT'], default='MVTec', help="select type of dataset")
+    parser.add_argument('--dataset_category', '-d', choices=['MVTec', 'BTAD', 'WFDD', 'WFT'], default='MVTec', help="select type of dataset")
 
     args = parser.parse_args()
     return args
