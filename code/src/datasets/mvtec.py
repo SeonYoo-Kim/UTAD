@@ -85,8 +85,7 @@ class MVTecDataset(Dataset):
                 y.extend([1] * len(img_fpath_list))
                 gt_type_dir = os.path.join(gt_dir, img_type)
                 img_fname_list = [os.path.splitext(os.path.basename(f))[0] for f in img_fpath_list]
-                gt_fpath_list = [os.path.join(gt_type_dir, img_fname + '_mask.png')
-                                 for img_fname in img_fname_list]
+                gt_fpath_list = [os.path.join(gt_type_dir, img_fname + '_mask.png') for img_fname in img_fname_list]
                 mask.extend(gt_fpath_list)
 
         assert len(x) == len(y), 'number of x and y should be same'
