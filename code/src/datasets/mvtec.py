@@ -25,9 +25,6 @@ class MVTecDataset(Dataset):
         self.cropsize = cropsize
         self.mvtec_folder_path = os.path.join(root_path, 'MVTec')
 
-        # download dataset if not exist
-        # self.download()
-
         # load dataset
         self.x, self.y, self.mask = self.load_dataset_folder()
 
@@ -91,29 +88,3 @@ class MVTecDataset(Dataset):
         assert len(x) == len(y), 'number of x and y should be same'
 
         return list(x), list(y), list(mask)
-
-    # def download(self):
-    #     """Download dataset if not exist"""
-    #
-    #     if not os.path.exists(self.mvtec_folder_path):
-    #         tar_file_path = self.mvtec_folder_path + '.tar.xz'
-    #         if not os.path.exists(tar_file_path):
-    #             download_url(URL, tar_file_path)
-    #         print('unzip downloaded dataset: %s' % tar_file_path)
-    #         tar = tarfile.open(tar_file_path, 'r:xz')
-    #         tar.extractall(self.mvtec_folder_path)
-    #         tar.close()
-    #
-    #     return
-
-
-class DownloadProgressBar(tqdm):
-    def update_to(self, b=1, bsize=1, tsize=None):
-        if tsize is not None:
-            self.total = tsize
-        self.update(b * bsize - self.n)
-
-
-def download_url(url, output_path):
-    with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
-        urllib.request.urlretrieve(url, filename=output_path, reporthook=t.update_to)
