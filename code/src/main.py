@@ -125,10 +125,6 @@ def main():
         pix_log_txt.write(f"{per_pixel_rocauc}\n")
         pix_log_txt.close()
 
-        param_txt = open(os.path.join(exp_path, 'param.txt'), 'a')
-        param_txt.write("eps : " + str(args.e) + "\tmin_samples : " + str(args.m) + "\timg_roc_auc :" + f"{roc_auc}" + "\tpix_roc_auc :" + f"{per_pixel_rocauc}")
-        param_txt.close()
-
         # get optimal threshold
         precision, recall, thresholds = precision_recall_curve(flatten_gt_mask_list, flatten_score_map_list)
         a = 2 * precision * recall
