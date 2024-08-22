@@ -1,6 +1,7 @@
 import argparse
 import numpy as np
 import os
+import time
 from tqdm import tqdm
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
@@ -11,7 +12,11 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision.models import wide_resnet50_2
-import datasets.mvtec as mvtec
+import datasets.MVTec
+import datasets.BTAD
+import datasets.WFDD
+import datasets.WFT
+import datasets.DTD_sys
 from einops import rearrange
 from sklearn.neighbors import NearestNeighbors
 
@@ -19,13 +24,24 @@ from sklearn.neighbors import NearestNeighbors
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--save_path", type=str, default="./result")
-    #parser.add_argument('--dataset_category', '-d', choices=['MVTec', 'BTAD', 'WFDD', 'WFT'], default='MVTec')
+    parser.add_argument('--dataset', choices=['MVTec', 'BTAD', 'WFDD', 'WFT', 'DTD-sys'], default='MVTec')
     return parser.parse_args()
 
 def main():
     args = parse_args()
     print('pwd=', os.getcwd())
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    if args.dataset == 'MVTec':
+        dataset = datasets.MVTec
+    elif args.dataset == 'BTAD':
+        dataset = datasets.BTAD
+    elif args.dataset == 'WFDD':
+        dataset = datasets.WFDD
+    elif args.dataset == 'WFT':
+        dataset = datasets.WFT
+    elif args.dataset == 'DTD-sys':
+        dataset = datasets.DTD_sys
 
     # load model
     model = wide_resnet50_2(pretrained=True, progress=True)
@@ -46,8 +62,9 @@ def main():
     total_roc_auc = []
     total_pixel_roc_auc = []
 
-    for class_name in mvtec.CLASS_NAMES:
-        test_dataset = mvtec.MVTecDataset(class_name=class_name, is_train=False)
+    for class_name in dataset.CLASS_NAMES:
+        start_time = time.time()
+        test_dataset = dataset.Dataset(class_name=class_name, is_train=False)
         test_dataloader = DataLoader(test_dataset, batch_size=1, pin_memory=True)
 
         gt_list = []
@@ -95,6 +112,23 @@ def main():
         print('%s pixel ROCAUC: %.3f' % (class_name, per_pixel_rocauc))
         fig_pixel_rocauc.plot(fpr, tpr, label='%s ROCAUC: %.3f' % (class_name, per_pixel_rocauc))
 
+        exp_path = os.path.join(args.save_path, args.dataset)
+        os.makedirs(exp_path, exist_ok=True)
+
+        img_log_txt = open(os.path.join(exp_path, 'img_auroc.txt'), 'a')
+        img_log_txt.write(f"{roc_auc}\n")
+        img_log_txt.close()
+        class_txt = open(os.path.join(exp_path, 'class_name.txt'), 'a')
+        class_txt.write(f"{class_name}\n")
+        class_txt.close()
+        pix_log_txt = open(os.path.join(exp_path, 'pxl_auroc.txt'), 'a')
+        pix_log_txt.write(f"{per_pixel_rocauc}\n")
+        pix_log_txt.close()
+
+        param_txt = open(os.path.join(exp_path, 'param.txt'), 'a')
+        param_txt.write("eps : " + str(args.e) + "\tmin_samples : " + str(args.m) + "\timg_roc_auc :" + f"{roc_auc}" + "\tpix_roc_auc :" + f"{per_pixel_rocauc}")
+        param_txt.close()
+
         # get optimal threshold
         precision, recall, thresholds = precision_recall_curve(flatten_gt_mask_list, flatten_score_map_list)
         a = 2 * precision * recall
@@ -103,11 +137,15 @@ def main():
         threshold = thresholds[np.argmax(f1)]
 
         # visualize localization result
-        visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold, args.save_path, class_name, 5,
-                             cut_surrounding)
+        visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold, exp_path, class_name, cut_surrounding)
 
         fig.tight_layout()
         fig.savefig(os.path.join(args.save_path, 'roc_curve.png'), dpi=100)
+
+        elapsed_time = time.time() - start_time
+        time_log_txt = open(os.path.join(exp_path, 'time_log.txt'), 'a')
+        time_log_txt.write(f"{elapsed_time}\n")
+        time_log_txt.close()
 
 
 def interpolate_scoremap(imgID, heatMap, cut,imgshape):
@@ -140,8 +178,8 @@ def calc_score(test, gallery, layerID):
 
 
 def visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold,
-                         save_path, class_name, vis_num,cut_pixel):
-    for t_idx in range(vis_num):
+                         exp_path, class_name,cut_pixel):
+    for t_idx in range(len(gt_mask_list)):
         test_img = test_imgs[t_idx]
         test_img = denormalization(test_img)
         test_gt = gt_mask_list[t_idx].transpose(1, 2, 0).squeeze()
@@ -169,8 +207,8 @@ def visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold,
         ax_img[3].imshow(test_pred_img)
         ax_img[3].title.set_text('Predicted anomalous image')
 
-        os.makedirs(os.path.join(save_path, 'images'), exist_ok=True)
-        fig_img.savefig(os.path.join(save_path, 'images', '%s_%03d.png' % (class_name, t_idx)), dpi=100)
+        os.makedirs(os.path.join(exp_path, 'images'), exist_ok=True)
+        fig_img.savefig(os.path.join(exp_path, 'images', '%s_%03d.png' % (class_name, t_idx)), dpi=100)
         fig_img.clf()
         plt.close(fig_img)
 

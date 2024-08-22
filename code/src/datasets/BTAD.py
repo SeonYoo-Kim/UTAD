@@ -8,14 +8,10 @@ import torch
 from torch.utils.data import Dataset
 from torchvision import transforms as T
 
-#CLASS_NAMES = ['carpet', 'grid', 'leather', 'tile', 'wood']
-#CLASS_NAMES = ['02']
-#CLASS_NAMES = ['texture_1', 'texture_2']
-#CLASS_NAMES = ['grey_cloth', 'grid_cloth', 'pink_flower', 'yellow_cloth']
-CLASS_NAMES = ['Blotchy_099', 'Fibrous_183', 'Marbled_078', 'Matted_069', 'Mesh_114', 'Perforated_037', 'Stratified_154', 'Woven_001', 'Woven_068', 'Woven_104', 'Woven_125', 'Woven_127']
+CLASS_NAMES = ['02']
 
-class MVTecDataset(Dataset):
-    def __init__(self, root_path='../data', class_name='carpet', is_train=True, resize=320, cropsize=320):
+class Dataset(Dataset):
+    def __init__(self, root_path='../data', class_name='02', is_train=True, resize=320, cropsize=320):
 
         assert class_name in CLASS_NAMES, 'class_name: {}, should be in {}'.format(class_name, CLASS_NAMES)
         self.root_path = root_path
@@ -23,7 +19,10 @@ class MVTecDataset(Dataset):
         self.is_train = is_train
         self.resize = resize
         self.cropsize = cropsize
-        self.mvtec_folder_path = os.path.join(root_path, 'MVTec')
+        self.folder_path = os.path.join(root_path, 'BTAD')
+
+        # download dataset if not exist
+        # self.download()
 
         # load dataset
         self.x, self.y, self.mask = self.load_dataset_folder()
@@ -59,8 +58,8 @@ class MVTecDataset(Dataset):
         phase = 'train' if self.is_train else 'test'
         x, y, mask = [], [], []
 
-        img_dir = os.path.join(self.mvtec_folder_path, self.class_name, phase)
-        gt_dir = os.path.join(self.mvtec_folder_path, self.class_name, 'ground_truth')
+        img_dir = os.path.join(self.folder_path, self.class_name, phase)
+        gt_dir = os.path.join(self.folder_path, self.class_name, 'ground_truth')
 
         img_types = sorted(os.listdir(img_dir))
         for img_type in img_types:
@@ -82,9 +81,36 @@ class MVTecDataset(Dataset):
                 y.extend([1] * len(img_fpath_list))
                 gt_type_dir = os.path.join(gt_dir, img_type)
                 img_fname_list = [os.path.splitext(os.path.basename(f))[0] for f in img_fpath_list]
-                gt_fpath_list = [os.path.join(gt_type_dir, img_fname + '_mask.png') for img_fname in img_fname_list]
+                gt_fpath_list = [os.path.join(gt_type_dir, img_fname + '_mask.png')
+                                 for img_fname in img_fname_list]
                 mask.extend(gt_fpath_list)
 
         assert len(x) == len(y), 'number of x and y should be same'
 
         return list(x), list(y), list(mask)
+
+    # def download(self):
+    #     """Download dataset if not exist"""
+    #
+    #     if not os.path.exists(self.mvtec_folder_path):
+    #         tar_file_path = self.mvtec_folder_path + '.tar.xz'
+    #         if not os.path.exists(tar_file_path):
+    #             download_url(URL, tar_file_path)
+    #         print('unzip downloaded dataset: %s' % tar_file_path)
+    #         tar = tarfile.open(tar_file_path, 'r:xz')
+    #         tar.extractall(self.mvtec_folder_path)
+    #         tar.close()
+    #
+    #     return
+
+
+class DownloadProgressBar(tqdm):
+    def update_to(self, b=1, bsize=1, tsize=None):
+        if tsize is not None:
+            self.total = tsize
+        self.update(b * bsize - self.n)
+
+
+def download_url(url, output_path):
+    with DownloadProgressBar(unit='B', unit_scale=True, miniters=1, desc=url.split('/')[-1]) as t:
+        urllib.request.urlretrieve(url, filename=output_path, reporthook=t.update_to)
