@@ -102,6 +102,13 @@ def main():
         print('%s ROCAUC: %.3f' % (class_name, roc_auc))
         fig_img_rocauc.plot(fpr, tpr, label='%s ROCAUC: %.3f' % (class_name, roc_auc))
 
+        exp_path = os.path.join(args.save_path, args.dataset)
+        os.makedirs(exp_path, exist_ok=True)
+
+        img_fpr_txt = open(os.path.join(exp_path, 'img_fpr.txt'), 'a')
+        img_fpr_txt.write(f"{fpr}\n")
+        img_fpr_txt.close()
+
         # calculate per-pixel level ROCAUC
         flatten_gt_mask_list = np.concatenate(gt_mask_list).ravel()
         flatten_score_map_list = np.concatenate(score_map_list).ravel()
@@ -111,9 +118,6 @@ def main():
         total_pixel_roc_auc.append(per_pixel_rocauc)
         print('%s pixel ROCAUC: %.3f' % (class_name, per_pixel_rocauc))
         fig_pixel_rocauc.plot(fpr, tpr, label='%s ROCAUC: %.3f' % (class_name, per_pixel_rocauc))
-
-        exp_path = os.path.join(args.save_path, args.dataset)
-        os.makedirs(exp_path, exist_ok=True)
 
         img_log_txt = open(os.path.join(exp_path, 'img_auroc.txt'), 'a')
         img_log_txt.write(f"{roc_auc}\n")
@@ -125,15 +129,15 @@ def main():
         pix_log_txt.write(f"{per_pixel_rocauc}\n")
         pix_log_txt.close()
 
-        # get optimal threshold
-        precision, recall, thresholds = precision_recall_curve(flatten_gt_mask_list, flatten_score_map_list)
-        a = 2 * precision * recall
-        b = precision + recall
-        f1 = np.divide(a, b, out=np.zeros_like(a), where=b != 0)
-        threshold = thresholds[np.argmax(f1)]
-
-        # visualize localization result
-        visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold, exp_path, class_name, cut_surrounding)
+        # # get optimal threshold
+        # precision, recall, thresholds = precision_recall_curve(flatten_gt_mask_list, flatten_score_map_list)
+        # a = 2 * precision * recall
+        # b = precision + recall
+        # f1 = np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+        # threshold = thresholds[np.argmax(f1)]
+        #
+        # # visualize localization result
+        # visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold, exp_path, class_name, cut_surrounding)
 
         fig.tight_layout()
         fig.savefig(os.path.join(exp_path, 'roc_curve.png'), dpi=100)
