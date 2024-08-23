@@ -126,14 +126,14 @@ def main():
         pix_log_txt.close()
 
         # get optimal threshold
-        # precision, recall, thresholds = precision_recall_curve(flatten_gt_mask_list, flatten_score_map_list)
-        # a = 2 * precision * recall
-        # b = precision + recall
-        # f1 = np.divide(a, b, out=np.zeros_like(a), where=b != 0)
-        # threshold = thresholds[np.argmax(f1)]
+        precision, recall, thresholds = precision_recall_curve(flatten_gt_mask_list, flatten_score_map_list)
+        a = 2 * precision * recall
+        b = precision + recall
+        f1 = np.divide(a, b, out=np.zeros_like(a), where=b != 0)
+        threshold = thresholds[np.argmax(f1)]
 
         # visualize localization result
-        #visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold, exp_path, class_name, cut_surrounding)
+        visualize_loc_result(test_imgs, gt_mask_list, score_map_list, threshold, exp_path, class_name, cut_surrounding)
 
         fig.tight_layout()
         fig.savefig(os.path.join(exp_path, 'roc_curve.png'), dpi=100)
