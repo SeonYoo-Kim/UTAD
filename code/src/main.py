@@ -96,7 +96,7 @@ def main():
 
         ##################################################
         # calculate image-level ROC AUC score
-        fpr, tpr, _ = roc_curve(gt_list, scores)
+        fpr, tpr, thresholds = roc_curve(gt_list, scores)
         roc_auc = roc_auc_score(gt_list, scores)
         total_roc_auc.append(roc_auc)
         print('%s ROCAUC: %.3f' % (class_name, roc_auc))
@@ -105,8 +105,12 @@ def main():
         exp_path = os.path.join(args.save_path, args.dataset)
         os.makedirs(exp_path, exist_ok=True)
 
+        j_scores = tpr - fpr
+        optimal_idx = np.argmax(j_scores)
+        optimal_fpr = fpr[optimal_idx]
+
         img_fpr_txt = open(os.path.join(exp_path, 'img_fpr.txt'), 'a')
-        img_fpr_txt.write(f"{fpr}\n")
+        img_fpr_txt.write(f"{optimal_fpr}\n")
         img_fpr_txt.close()
 
         # calculate per-pixel level ROCAUC
